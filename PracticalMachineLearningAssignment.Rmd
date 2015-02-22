@@ -1,0 +1,106 @@
+---
+title: "Practical Machine Learning Assignment"
+output: html_document
+---
+#Project Brief
+Given data about personal activity we need to predict the manner in which participants did the exercise. We will use classe variable as suggested in instruction.Following is task list we need to do
+
+1. Describe how to build the model
+
+2. Describe how to cross validate
+
+3. From the model find what is sample error
+
+4. Why we made these choices
+
+5. Use Prediction model to predict 20 test cases in testing data
+
+#Load required packages
+
+We need caret package to build our model (using train function). There are different methods available for train, most effective one for this assignmend is random forest "rf" as we show below. lets load caret package
+
+```{r}
+library(caret)
+```
+
+#Getting and cleaning data
+
+First we need to download two files pml-testing.csv and pml-training.csv from given links and place them in working directory. Use getwd() to find working directory. Next we read these two files in 2 variables
+
+
+```{r}
+testing<-read.csv("pml-testing.csv")
+training<-read.csv("pml-training.csv")
+ncol(training)
+```
+
+As can be seen right now we have 160 columns, last column in classe
+Now clean the data. let us Remove all columns with NA values.
+
+```{r}
+training<-training[,(colSums(is.na(training)))==0]
+testing<-testing[,(colSums(is.na(testing)))==0]
+ncol(training)
+```
+
+This reduces columns from 160 to 93.
+Now clean the data further. Remove all columns with "" values.
+
+```{r}
+training<-training[,(colSums(training==""))==0]
+testing<-testing[,(colSums(testing==""))==0]
+ncol(training)
+```
+
+Now number of columns are 60. Starting 6 columns are almost useless features. Lets remove them also
+
+```{r}
+training <- training[, c(7:60)]
+testing <- testing[, c(7:60)]
+ncol(training)
+```
+
+
+
+# Describe how to build the model
+
+Now we divide our training set into 2 partitions, with one partition we train our model with other partition we validate our model. If validation will be good than we will go for predicting testing data using our model
+
+train partition = 70% of training data
+validate partition = 30% of training data
+
+```{r}
+partition<-createDataPartition(y=training$classe,p=0.70,list=F)
+trainPartition<-training[partition,]
+validationPartition<-training[-partition,]
+```
+
+and finally we build model using trainPartition
+
+```{r}
+model<-train(classe~.,data=trainPartition,method="rf",prox=T)
+model
+```
+
+# Describe how to cross validate
+
+now we predict validationPartition classe variable using our model
+
+```{r}
+prediction = predict(model,validationPartition)
+confusionMatrix(prediction ,validationPartition$classe)
+```
+
+#From the model find what is sample error
+We can see how model perform using degree of accuracy which is 99%.
+
+#Why we made these choices
+As compared to other training function, Random forest gives best performance for this set of data.
+
+#Use Prediction model to predict 20 test cases in testing data
+```{r}
+result<-predict(model,testing[,1:(ncol(testing)-1)])
+result
+```
+
+
